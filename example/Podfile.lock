@@ -1,12 +1,23 @@
 PODS:
   - Google-Mobile-Ads-SDK (7.14.0)
+  - InLocoMedia-iOS-SDK (3.1.0):
+    - InLocoMedia-iOS-SDK/Ads (= 3.1.0)
+    - InLocoMedia-iOS-SDK/Core (= 3.1.0)
+    - InLocoMedia-iOS-SDK/Location (= 3.1.0)
+  - InLocoMedia-iOS-SDK/Ads (3.1.0):
+    - InLocoMedia-iOS-SDK/Core
+  - InLocoMedia-iOS-SDK/Core (3.1.0)
+  - InLocoMedia-iOS-SDK/Location (3.1.0):
+    - InLocoMedia-iOS-SDK/Core
 
 DEPENDENCIES:
   - Google-Mobile-Ads-SDK
+  - InLocoMedia-iOS-SDK (~> 3.1.0)
 
 SPEC CHECKSUMS:
   Google-Mobile-Ads-SDK: dbb0211c52ca02f72331b831ce4ccd218cf08748
+  InLocoMedia-iOS-SDK: 9c29e5e5fab24bface27e1d281430007c2157bbc
 
-PODFILE CHECKSUM: d87c3f08d63031fccca831636693581f0b2abf2d
+PODFILE CHECKSUM: 41c6d18be9a87053590bee48bb643f039be2cbef
 
-COCOAPODS: 1.1.1
+COCOAPODS: 1.2.0

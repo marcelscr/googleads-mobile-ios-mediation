@@ -18,13 +18,30 @@
 //
 
 #import "AppDelegate.h"
+#import <InLocoMediaSDKAds/ILMInLocoMedia.h>
+
+#define APP_KEY @"c67a03692bcd4fe26291712cf7f2dec47bbe94d0eb849a6c6ecac2fdbfb350fe"
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application
-    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  // Override point for customization after application launch.
-  return YES;
+- (BOOL)application:(UIApplication *)application 
+didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+    ILMAdsOptions *options = [[ILMAdsOptions alloc] init];
+    
+    //Verbose mode activated, remember to set NO for production
+    [options setLogEnabled:YES];
+    
+    //Development mode activated
+    [options setDevelopmentDevices:@[[[UIDevice currentDevice] identifierForVendor].UUIDString]];
+    
+    //Your production ads key
+    [options setAdsKey:APP_KEY];
+    
+    //Init our framework
+    [ILMInLocoMedia initWithOptions:options];
+    
+    return YES;
 }
 
 @end

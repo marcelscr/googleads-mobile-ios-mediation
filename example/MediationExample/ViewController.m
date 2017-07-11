@@ -18,6 +18,7 @@
 //
 
 #import "ViewController.h"
+#import <InLocoMediaSDKAds/ILMInLocoMedia.h>
 
 @import GoogleMobileAds;
 
@@ -28,13 +29,15 @@
 
 NSString *const kCustomEventBannerAdUnitID = @"ca-app-pub-3940256099942544/2493674513";
 NSString *const kCustomEventInterstitialAdUnitID = @"ca-app-pub-3940256099942544/3970407716";
-NSString *const kCustomEventNativeAdUnitID = @"ca-app-pub-3940256099942544/2099734914";
+NSString *const kCustomEventNativeAdUnitID = @"error";
 NSString *const kAdapterBannerAdUnitID = @"ca-app-pub-3940256099942544/5855720519";
 NSString *const kAdapterInterstitialAdUnitID = @"ca-app-pub-3940256099942544/8809186917";
 NSString *const kAdapterNativeAdUnitID = @"ca-app-pub-3940256099942544/2239335711";
 
+#define NATIVE_AD_UNIT_ID @"083874b2b47bbe56d7bdb63ed3ddad2168cb81ec4f4b1e4fbd4cf8c690151368"
+
 @interface ViewController () <GADInterstitialDelegate, GADNativeAppInstallAdLoaderDelegate,
-                              GADNativeContentAdLoaderDelegate>
+                              GADNativeContentAdLoaderDelegate, ILMAdManagerDelegate>
 
 @property(nonatomic, weak) IBOutlet GADBannerView *adapterBanner;
 @property(nonatomic, weak) IBOutlet GADBannerView *customEventBanner;
@@ -50,6 +53,9 @@ NSString *const kAdapterNativeAdUnitID = @"ca-app-pub-3940256099942544/223933571
 
 @property(nonatomic, strong) UIView *adapterNativeAdView;
 @property(nonatomic, strong) UIView *customEventNativeAdView;
+
+// The view that will receive the native ad.
+@property(nonatomic, strong) ExampleNativeContentAdView *contentAdView;
 
 /// You must keep a strong reference to the GADAdLoader during the ad loading process.
 @property(nonatomic, strong) GADAdLoader *adapterAdLoader;
@@ -97,6 +103,11 @@ NSString *const kAdapterNativeAdUnitID = @"ca-app-pub-3940256099942544/223933571
                  options:@[ adViewOptions ]];
   self.adapterAdLoader.delegate = self;
   [self.adapterAdLoader loadRequest:[GADRequest request]];
+    
+    // Creates the reference to a View that will receive the Native Ad
+    NSArray *nibLoadResult =
+    [[NSBundle mainBundle] loadNibNamed:@"ExampleNativeContentAdView" owner:nil options:nil];
+    self.contentAdView = nibLoadResult.firstObject;
 }
 
 - (void)requestCustomEventInterstitial {
@@ -169,12 +180,6 @@ NSString *const kAdapterNativeAdUnitID = @"ca-app-pub-3940256099942544/223933571
   } else if (interstitial == self.adapterInterstitial) {
     [self requestAdapterInterstitial];
   }
-}
-
-#pragma mark GADAdLoaderDelegate implementation
-
-- (void)adLoader:(GADAdLoader *)adLoader didFailToReceiveAdWithError:(GADRequestError *)error {
-  NSLog(@"%@ failed with error: %@", adLoader, error.localizedDescription);
 }
 
 #pragma mark GADNativeAppInstallAdLoaderDelegate implementation
@@ -328,6 +333,70 @@ NSString *const kAdapterNativeAdUnitID = @"ca-app-pub-3940256099942544/223933571
 
   // In order for the SDK to process touch events properly, user interaction should be disabled.
   contentAdView.callToActionView.userInteractionEnabled = NO;
+}
+
+#pragma mark GADAdLoaderDelegate implementation
+
+- (void)adLoader:(GADAdLoader *)adLoader didFailToReceiveAdWithError:(GADRequestError *)error {
+    NSLog(@"%@ failed with error: %@", adLoader, error.localizedDescription);
+
+    // Documentation: https://dash.readme.io/project/docsinlocomedia/v3.0/docs/native-ads-in-adviews
+    
+    NSLog(@"Trying InLocoMedia's SDK");
+    ILMNativeViewBinder *binder = [self makeBinder:self.contentAdView];
+    ILMAdManager *manager = [ILMAdManagerFactory nativeAdManagerWithViewBinder:binder delegate:self];
+    ILMAdRequest *request = [[ILMAdRequest alloc] init];
+    request.adUnitId = NATIVE_AD_UNIT_ID;
+    [manager loadAdWithRequest:request];
+}
+
+- (ILMNativeViewBinder *)makeBinder:(ExampleNativeContentAdView *)adView
+{
+    ILMNativeViewBinderBuilder *builder = [[ILMNativeViewBinderBuilder alloc] init];
+    [builder setContainerView:adView];
+    [builder setTitleLabel:(UILabel *)adView.headlineView];
+    [builder setDescriptionLabel:(UILabel *)adView.bodyView];
+    [builder setButton:(UIButton *)adView.callToActionView];
+    [builder setIconImageView:(UIImageView *)adView.imageView];
+    
+    // Other possible views
+    //[builder setHighLightLabel:<your-highlight-label>];
+    //[builder setContentImageView:<your-content-imageview>];
+    
+    return [builder build];
+}
+
+#pragma mark ILMAdManagerDelegate implementation
+
+- (void)ilmFinishedLoadingAdOnView:(UIView *)view
+{
+    // Unused views
+    self.contentAdView.degreeOfAwesomenessView.hidden = YES;
+    self.contentAdView.advertiserView.hidden = YES;
+    
+    UIView *placeholder = self.customEventNativeAdPlaceholder;
+    [self replaceNativeAdView:view inPlaceholder:placeholder];
+}
+
+- (void)ilmFailedToLoadAdOnView:(UIView *)view withError:(ILMError *)error
+{
+    NSLog(@"InLocoMedia failed with error: %@", error.localizedDescription);
+}
+
+- (BOOL)ilmWillPerformClickOnAdWithView:(UIView *)view
+{
+    //Called after the view is clicked and before the click action is performed
+    return YES; //Return YES if you allow the click action to be performed, NO otherwise.
+}
+
+- (void)ilmDidPerformClickOnAdWithView:(UIView *)view willLeaveApplication:(BOOL)willLeaveApplication
+{
+    //Called after an advertisement is clicked and before leaving the application to open its URL.
+}
+
+- (void)ilmDidReturnFromClickOnView:(UIView *)view
+{
+    //Called when the application returns from a click.
 }
 
 @end
